@@ -1,0 +1,69 @@
+{{extend 'layout.html'}}
+{{include}}
+    <style type="text/css">
+        .active{
+            display:inline;
+         margin-left: 2em; 
+         font-size:20px;  
+        }
+    </style>
+
+<ul>
+      <li class="active"><a href="{{=URL('create_post')}}">Upload Recipe</a></li>
+      <li class="active"><a href="{{=URL('viewallposts')}}">View All Recipes</a></li>
+      <li class="active"><a href="{{=URL('viewmyposts')}}">View My Recipes</a></li>
+      <li class="active"><a href="{{=URL('view_people')}}">View All Users</a></li>
+      <li class="active"><a href="{{=URL('home')}}">View My Profile</a></li>
+</ul>
+<br>
+<hr>
+
+<h2> My Recipes </h2>
+{{if len(xyz) == 0 :}}
+<p>No Recent Recipes</p>
+{{pass}}.
+
+
+<ul>
+
+{{for i in xyz:}}
+    <li>
+        {{=i['post_text']}} 
+        <br>
+        {{temp = db(db.posts.id == i['id']).select(db.posts.image)}}
+        
+        <div><a href="{{=URL('recipe',args=i['id'])}}">
+            <img style="width:200px" src="{{=URL('download', args=temp[0]['image'])}}"></img>
+        </a></div>
+       <a href="{{=URL(r=request,f='delpost?pid={0}&prev={1}' .format(i['id'],'viewallposts'))}}">Delete</a>
+       <a href="{{=URL(r=request,f='editpost?pid={0}&prev={1}' .format(i['id'],'viewallposts'))}}">Edit</a>
+    
+                     
+    <span class="i">
+      On {{=i.created_on}}
+    </span><br />
+    <br />
+    Comments : <br/>
+    <form action="post2" method="post" id="1">
+      <textarea name="comment" placeholder="Your comment here" form="1"></textarea>
+      <input type="hidden" name="pid" value={{=i['id']}}>
+      <input type="submit" value="Submit">
+    </form>
+    <br />
+    {{for post in comments:}}
+        {{if post['postid'] == i['id']:}}
+            <div class="post" style="background-color: #E0E0E0;">
+              On {{=post.created_on}} <a href = "homepage/{{=i.created_by}}">{{=post.created_by.first_name}}</a>
+                  says <span class="post_body">{{=post.body}}</span>
+                  </div>
+                 <br /> 
+        {{pass}}
+    {{pass}}
+    </li>
+{{pass}}
+</ul>
+<div style="float:center;width:100%;text-align:center">
+    <span><a style="float:center" href="{{=URL('changeVarDecrease2')}}">previous</a> 
+        &nbsp : &nbsp 
+        <a style="float:center" href="{{=URL('changeVarIncrease2')}}">next</a></span><br>
+ </div>

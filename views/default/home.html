@@ -1,0 +1,35 @@
+{{extend 'layout.html'}}
+{{include}}
+<style type="text/css">
+        ul li {
+         display:inline;
+         margin-left: 2em;
+         font-size:20px;   
+        }
+    </style>
+
+<ul>
+      <li><a href="{{=URL('create_post')}}">Upload Recipe</a></li>
+      <li><a href="{{=URL('viewallposts')}}">View All Recipes</a></li>
+      <li><a href="{{=URL('viewmyposts')}}">View My Recipes</a></li>
+      <li><a href="{{=URL('view_people')}}">View All Users</a></li>
+      <li><a href="{{=URL('home')}}">View My Profile</a></li>
+   
+</ul>
+<br>
+<hr>
+<h2> My Profile </h2>
+
+{{if len(a) == 0 : }}
+    No result found
+{{else:}}
+    {{for i in a:}}
+    
+<pre>
+<h3> Full Name  : {{=i.first_name}} {{=i.last_name}}</h3>
+<h3> Hometown   : {{=i.Hometown}}</h3>
+<h3> Email-id   : {{=i.email}}</h3>
+<h3> Birth-Date : {{=i.Birthdate}}</h3>
+</pre>
+    {{pass}}
+{{pass}}

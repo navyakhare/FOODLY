@@ -1,0 +1,125 @@
+timestamp: 2016-03-24T18:16:52.481051
+CREATE TABLE auth_user(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    first_name CHAR(128),
+    last_name CHAR(128),
+    email CHAR(512),
+    password CHAR(512),
+    registration_key CHAR(512),
+    reset_password_key CHAR(512),
+    registration_id CHAR(512),
+    Gender CHAR(512),
+    Birthdate DATE,
+    Hometown CHAR(512)
+);
+success!
+timestamp: 2016-03-24T18:16:52.493821
+CREATE TABLE auth_group(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    role CHAR(512),
+    description TEXT
+);
+success!
+timestamp: 2016-03-24T18:16:52.506943
+CREATE TABLE auth_membership(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES auth_user (id) ON DELETE CASCADE,
+    group_id INTEGER REFERENCES auth_group (id) ON DELETE CASCADE
+);
+success!
+timestamp: 2016-03-24T18:16:52.520491
+CREATE TABLE auth_permission(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    group_id INTEGER REFERENCES auth_group (id) ON DELETE CASCADE,
+    name CHAR(512),
+    table_name CHAR(512),
+    record_id INTEGER
+);
+success!
+timestamp: 2016-03-24T18:16:52.534184
+CREATE TABLE auth_event(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    time_stamp TIMESTAMP,
+    client_ip CHAR(512),
+    user_id INTEGER REFERENCES auth_user (id) ON DELETE CASCADE,
+    origin CHAR(512),
+    description TEXT
+);
+success!
+timestamp: 2016-03-24T18:16:52.548666
+CREATE TABLE auth_cas(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES auth_user (id) ON DELETE CASCADE,
+    created_on TIMESTAMP,
+    service CHAR(512),
+    ticket CHAR(512),
+    renew CHAR(1)
+);
+success!
+timestamp: 2016-03-24T21:04:28.759034
+CREATE TABLE posts(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    post_text TEXT,
+    is_active CHAR(1),
+    created_on TIMESTAMP,
+    created_by INTEGER REFERENCES auth_user (id) ON DELETE CASCADE,
+    modified_on TIMESTAMP,
+    modified_by INTEGER REFERENCES auth_user (id) ON DELETE CASCADE
+);
+success!
+timestamp: 2016-03-24T21:04:28.774302
+CREATE TABLE comment_post(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    body TEXT,
+    postid INTEGER REFERENCES posts (id) ON DELETE CASCADE,
+    is_active CHAR(1),
+    created_on TIMESTAMP,
+    created_by INTEGER REFERENCES auth_user (id) ON DELETE CASCADE,
+    modified_on TIMESTAMP,
+    modified_by INTEGER REFERENCES auth_user (id) ON DELETE CASCADE
+);
+success!
+timestamp: 2016-03-26T22:25:32.126272
+ALTER TABLE posts ADD picture CHAR(512);
+timestamp: 2016-03-26T22:25:32.139531
+ALTER TABLE posts ADD recipe CHAR(512);
+timestamp: 2016-03-28T16:30:53.231825
+ALTER TABLE posts ADD description TEXT;
+timestamp: 2016-03-28T16:30:53.271494
+ALTER TABLE posts ADD image CHAR(512);
+timestamp: 2016-03-28T16:30:53.282298
+ALTER TABLE posts ADD detail TEXT;
+timestamp: 2016-03-28T16:30:53.296804
+ALTER TABLE posts ADD authur TEXT;
+timestamp: 2016-03-28T16:43:03.407517
+CREATE TABLE likes(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    total_likes INTEGER,
+    user_name TEXT,
+    postid INTEGER REFERENCES posts (id) ON DELETE CASCADE
+);
+success!
+timestamp: 2016-03-28T16:44:14.241813
+ALTER TABLE posts ADD title TEXT;
+timestamp: 2016-03-28T16:44:14.259278
+ALTER TABLE posts ADD detailed_description TEXT;
+timestamp: 2016-03-28T21:09:45.582556
+ALTER TABLE likes ADD username INTEGER REFERENCES auth_user (id) ON DELETE CASCADE;
+timestamp: 2016-03-28T21:09:45.594385
+ALTER TABLE likes ADD postname INTEGER REFERENCES posts (id) ON DELETE CASCADE;
+timestamp: 2016-03-28T21:09:45.606060
+ALTER TABLE likes ADD unique_key CHAR(512) NOT NULL UNIQUE;
+timestamp: 2016-03-28T21:12:57.394294
+ALTER TABLE likes ADD unique_key CHAR(512) NOT NULL UNIQUE;
+timestamp: 2016-03-29T15:03:59.275949
+ALTER TABLE likes ADD modified_by INTEGER REFERENCES auth_user (id) ON DELETE CASCADE;
+timestamp: 2016-03-29T15:03:59.293329
+ALTER TABLE likes ADD is_active CHAR(1);
+timestamp: 2016-03-29T15:03:59.304113
+ALTER TABLE likes ADD created_by INTEGER REFERENCES auth_user (id) ON DELETE CASCADE;
+timestamp: 2016-03-29T15:03:59.315417
+ALTER TABLE likes ADD created_on TIMESTAMP;
+timestamp: 2016-03-29T15:03:59.326137
+ALTER TABLE likes ADD modified_on TIMESTAMP;
+timestamp: 2016-03-29T16:11:25.929320
+ALTER TABLE posts ADD num INTEGER;

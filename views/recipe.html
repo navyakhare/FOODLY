@@ -1,0 +1,39 @@
+{{extend 'layout.html'}}
+{{include}}
+<style type="text/css">
+        ul li {
+         display:inline;
+         margin-left: 2em;
+         font-size:20px;   
+        }
+    </style>
+
+<ul>
+      <li><a href="{{=URL('create_post')}}">Upload Recipe</a></li>
+      <li><a href="{{=URL('viewallposts')}}">View All Recipes</a></li>
+      <li><a href="{{=URL('viewmyposts')}}">View My Recipes</a></li>
+      <li><a href="{{=URL('view_people')}}">View All Users</a></li>
+      <li><a href="{{=URL('home')}}">View My Profile</a></li>
+   
+</ul>
+
+<h2> RECIPE </h2>
+
+{{i=temp_id}}
+    
+<pre>
+{{temp = db(db.posts.id == i).select(db.posts.image)}}
+      <div>
+            <img style="width:200px" src="{{=URL('download', args=temp[0]['image'])}}"></img>
+      </div>
+{{temp = db(db.posts.id == i).select(db.posts.title)}}
+<h3> Title  : {{=temp[0]['title']}}</h3>
+{{temp = db(db.posts.id == i).select(db.posts.authur)}}
+<h3> Authur   : {{=args=temp[0]['authur']}}</h3>
+{{temp = db(db.posts.id == i).select(db.posts.description)}}
+<h3> Description   : {{=args=temp[0]['description']}}</h3>
+{{temp = db(db.posts.id == i).select(db.posts.detailed_description)}}
+<h3> Detailed Description : {{=args=temp[0]['detailed_description']}}</h3>
+</pre>
+    {{pass}}
+{{pass}}

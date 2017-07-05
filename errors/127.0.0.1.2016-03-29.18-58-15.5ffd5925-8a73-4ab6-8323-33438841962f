@@ -1,0 +1,473 @@
+(dp1
+S'output'
+p2
+S"<type 'exceptions.IndexError'> list index out of range"
+p3
+sS'layer'
+p4
+S'/home/navya/itws2/web2pynew/applications/FOODILY/controllers/default.py'
+p5
+sS'code'
+p6
+S'# -*- coding: utf-8 -*-\n# this file is released under public domain and you can use without limitations\n\n#########################################################################\n## This is a samples controller\n## - index is the default action of any application\n## - user is required for authentication and authorization\n## - download is for downloading files uploaded in the db (does streaming)\n## - call exposes all registered services (none by default)\n#########################################################################\n\n\ndef index():\n    """\n    example action using the internationalization operator T and flash\n    rendered by views/default/index.html or views/generic.html\n\n    if you need a simple wiki simple replace the two lines below with:\n    return auth.wiki()\n    """\n    session.startvar=0\n    session.endvar=5\n    session.startvar2=0\n    session.endvar2=5\n    \n    response.flash = T("WELCOME!")\n    return dict(message=T(\'Manage your recipes the easy way\'))\n\n\ndef user():\n    """\n    exposes:\n    http://..../[app]/default/user/login\n    http://..../[app]/default/user/logout\n    http://..../[app]/default/user/register\n    http://..../[app]/default/user/profile\n    http://..../[app]/default/user/retrieve_password\n    http://..../[app]/default/user/change_password\n    use @auth.requires_login()\n        @auth.requires_membership(\'group name\')\n        @auth.requires_permission(\'read\',\'table name\',record_id)\n    to decorate functions that need access control\n    """\n    return dict(form=auth())\n\n\ndef download():\n    """\n    allows downloading of uploaded files\n    http://..../[app]/default/download/[filename]\n    """\n    return response.download(request, db)\n\n\ndef call():\n    """\n    exposes services. for example:\n    http://..../[app]/default/call/jsonrpc\n    decorate with @services.jsonrpc the functions to expose\n    supports xml, json, xmlrpc, jsonrpc, amfrpc, rss, csv\n    """\n    return service()\n\n\n@auth.requires_signature()\ndef data():\n    """\n    http://..../[app]/default/data/tables\n    http://..../[app]/default/data/create/[table]\n    http://..../[app]/default/data/read/[table]/[id]\n    http://..../[app]/default/data/update/[table]/[id]\n    http://..../[app]/default/data/delete/[table]/[id]\n    http://..../[app]/default/data/select/[table]\n    http://..../[app]/default/data/search/[table]\n    but URLs must be signed, i.e. linked with\n      A(\'table\',_href=URL(\'data/tables\',user_signature=True))\n    or with the signed load operator\n      LOAD(\'default\',\'data.load\',args=\'tables\',ajax=True,user_signature=True)\n    """\n    return dict(form=crud())\n    \n \n \ndef redirect_after_login(form):\n\tredirect(URL(r=request,f=\'viewallposts\'))\n\nauth.settings.login_onaccept.append(redirect_after_login)\nauth.settings.register_onaccept.append(redirect_after_login)\n\n@auth.requires_login()\ndef home():\n\n    a = db(db.auth_user.id ==  auth.user_id).select(db.auth_user.ALL)\n    return locals()\n\n@auth.requires_login()\ndef homepage():\n\n    id2 = request.args(0)\n    a = db(db.auth_user.id ==  id2).select(db.auth_user.ALL)\n    id1 = auth.user_id\n    return locals()\n\n@auth.requires_login()\ndef view_people():\n\n    id1 = auth.user_id\n    a = db(db.auth_user.id != auth.user_id).select(db.auth_user.ALL)\n    return locals()\n#-----------------------------------------posts------------------------------------------------------#\nimport re\n@auth.requires_login()\ndef create_post():\n#\tform = SQLFORM(db.posts, deletable=True,upload=URL(\'download\'), fields=[\'post_text\', \'uploads\'])\n\tform = SQLFORM(db.posts)\n\tif form.process().accepted:\n#\t\tdb.posts.insert(post_text=form.vars.Post_Text)\n\t\tsession.flash=\'Recipe Uploaded\'\n\t\tredirect(URL(r=request,f=\'viewmyposts\'))\n\telif form.errors:\n\t\tresponse.flash=\'Errors in form\'\n\treturn locals()\n#@auth.requires_login()\n#def homepage():\n #   defg = db(auth.user.id == db.auth_user.id).select(db.auth_user.dp, db.auth_user.username)\n #   temp = db().select(db.posts.ALL, orderby=~db.posts.id)\n #   session.length = len(temp)\n #   abcd = temp[session.startvar : session.endvar]\n#    images = db(db.images.my_recipe_id == abcd[0][\'id\']).select(db.images.file)\n  #  return dict(abcd=abcd)\n\n@auth.requires_login()\ndef changeVarIncrease():\n    if session.endvar + 1 < session.length :\n        session.startvar = session.startvar + 5\n        session.endvar = session.endvar + 5\n    redirect(\'viewallposts\')\n\n@auth.requires_login()\ndef changeVarDecrease():\n    if session.startvar - 5 >= 0 :\n        session.startvar = session.startvar - 5\n        session.endvar = session.endvar - 5\n    redirect(\'viewallposts\')\t\n\n@auth.requires_login()\ndef changeVarIncrease2():\n    if session.endvar2 + 1 < session.length2 :\n        session.startvar2 = session.startvar2 + 5\n        session.endvar2 = session.endvar2 + 5\n    redirect(\'viewmyposts\')\n\n@auth.requires_login()\ndef changeVarDecrease2():\n    if session.startvar2 - 5 >= 0 :\n        session.startvar2 = session.startvar2 - 5\n        session.endvar2 = session.endvar2 - 5\n    redirect(\'viewmyposts\')\n\n@auth.requires_login()\ndef viewmyposts():\n    me = db(db.auth_user.id == auth.user_id).select(db.auth_user.first_name)[0][\'first_name\']\n    p = db(db.posts.created_by == auth.user_id).select(db.posts.ALL ,orderby=~db.posts.created_on)\n    comments=db(db.comment_post.id > 0).select(db.comment_post.ALL ,orderby=~db.comment_post.created_on)\n    temp = db(db.posts.created_by == auth.user_id).select(db.posts.ALL, orderby=~db.posts.id)\n    session.length2 = len(temp)\n    xyz = temp[session.startvar2 : session.endvar2]\n    return locals()\n\n@auth.requires_login()\ndef viewallposts():\n    #session.startvar=0\n    #session.endvar=5\n    user = auth.user_id\n    p = db(db.posts.id > 0).select(db.posts.ALL ,orderby=~db.posts.created_on)\n    l=db(db.likes).select(db.likes.ALL)\n    li=l[0]\n    comments=db(db.comment_post.id > 0).select(db.comment_post.ALL)\n    temp = db(db.posts.id > 0).select(db.posts.ALL, orderby=~db.posts.id)\n    session.length = len(temp)\n    abcd = temp[session.startvar : session.endvar] \n    return locals()\n    \n@auth.requires_login()\ndef post1():\n#add comments in viewallposts\n\tcid=request.vars.cid\n\tif cid!=None:\n\t\tprev=request.vars.prev+\'?cid=\'+cid\n\telse:\n\t\tprev = request.vars.prev\n\tcomment=request.vars.comment\n\tpid=request.vars.pid\n\tif type(comment) == list:\n\t\tcomment =  comment[0]\n\tdb.comment_post.insert(body=str(comment),postid=pid)\n\tredirect(URL(r=request,f=prev))\n\treturn locals()\n@auth.requires_login()\n\n\ndef post2():\n#add comments in viewmyposts\n\tcomment=request.vars.comment\n\tpid=request.vars.pid\n\tif type(comment) == list:\n\t\tcomment =  comment[0]\n\tdb.comment_post.insert(body=str(comment),postid=pid)\n\tredirect(URL(r=request,f=\'viewmyposts\'))\n\treturn locals()\n#\treturn dict(form=SQLFORM(db.comment_post).process(),comments=db(db.comment_post).select())\n@auth.requires_login()\ndef addlike():\n    temp = db(db.posts.id == request.args(0,cast=int)).select(db.posts.ALL)[0]\n    temp_id=temp[\'id\']\n    temp.num=temp.num+1\n    temp.update_record()\n    db.likes.insert(username=auth.user.id, postid=temp_id)\n    \n    redirect(URL(\'viewallposts\'))\n    \n@auth.requires_login()\ndef notlike():\n    temp = db(db.posts.id == request.args(0,cast=int)).select(db.posts.ALL)[0]\n    temp_id=temp[\'id\']\n    temp.num=temp.num-1\n    if temp.num >= 0:\n        temp.update_record()\n        db(db.likes.postid == temp[\'id\']).delete()\n#    db.likes.delete(username=auth.user.id, postid=temp_id)\n    redirect(URL(\'viewallposts\'))\n\n@auth.requires_login()\ndef delpost():\n\tpid=request.vars.pid\n\tif request.vars.grp_id!=None:\n\t\tprev = request.vars.prev+\'/\'+request.vars.grp_id\n\telse : \n\t\tprev = request.vars.prev\n\tdb(db.posts.id == pid).delete()\n\tsession.flash=\'Deleted !\'\n\tredirect(URL(r=request,f=prev))\n\treturn locals()\n\n@auth.requires_login()\ndef editpost():\n\tpid = request.vars.pid\n\tif request.vars.grp_id!=None:\n\t\tprev = request.vars.prev+\'/\'+request.vars.grp_id\n\telse:\n\t\tprev = request.vars.prev\n\tpst = db(db.posts.id == pid).select(db.posts.ALL)[0]\n\tform = SQLFORM(db.posts,pid,deletable=True)\n#\tform = SQLFORM.factory(\n#\t\tField(\'Post_Text\', \'text\',default = pst[\'post_text\']),            \n#\t\tField(\'Attachment\', \'upload\')\n#\t\t)            \n\tif form.process().accepted:\n\t\tp = db(db.posts.id == pid).select(db.posts.ALL)[0]\n                p.post_text = form.vars.post_text\n\t\tp.update_record()\n\t\tsession.flash=\'Successfully Updated\'\n\t\tredirect(URL(r=request,f=prev))\n\telif form.errors:\n\t\tresponse.flash=\'Errors in form\'\n\treturn locals()\n\n#----------------------- Update My Information --------------------------\ndef update_my_info():\n\t form = SQLFORM(db.auth_user, auth.user_id)\n\t if form.process().accepted:\n\t\t response.flash = \'form accepted\'\t\n       \t elif form.errors:\n             response.flash=\'Errors in form\'    \n\t return dict(form=form)\n\t redirect(URL(r=request,f = \'viewmyposts\'))\n#---------------Show Recipe-------------------------------------------------\ndef recipe():\n    #image = db.image(request.args(0,cast=int)\n    temp = db(db.posts.id == request.args(0,cast=int)).select(db.posts.id)\n    temp_id=temp[0][\'id\']\n    return dict(temp_id=temp_id)\ndef vote():\n    posts = db.posts[request.vars.id]\n    new_votes = posts.likes + 1\n    posts.update_record(likes=new_votes)\n    return str(new_votes)\n\nresponse._vars=response._caller(viewallposts)\n'
+p7
+sS'snapshot'
+p8
+(dp9
+S'exception'
+p10
+(dp11
+S'__hash__'
+p12
+S"<method-wrapper '__hash__' of exceptions.IndexError object>"
+p13
+sS'__setattr__'
+p14
+S"<method-wrapper '__setattr__' of exceptions.IndexError object>"
+p15
+sS'__reduce_ex__'
+p16
+S'<built-in method __reduce_ex__ of exceptions.IndexError object>'
+p17
+sS'__getslice__'
+p18
+S"<method-wrapper '__getslice__' of exceptions.IndexError object>"
+p19
+sS'__getitem__'
+p20
+S"<method-wrapper '__getitem__' of exceptions.IndexError object>"
+p21
+sS'__setstate__'
+p22
+S'<built-in method __setstate__ of exceptions.IndexError object>'
+p23
+sS'args'
+p24
+S"('list index out of range',)"
+p25
+sS'__reduce__'
+p26
+S'<built-in method __reduce__ of exceptions.IndexError object>'
+p27
+sS'__str__'
+p28
+S"<method-wrapper '__str__' of exceptions.IndexError object>"
+p29
+sS'__format__'
+p30
+S'<built-in method __format__ of exceptions.IndexError object>'
+p31
+sS'__getattribute__'
+p32
+S"<method-wrapper '__getattribute__' of exceptions.IndexError object>"
+p33
+sS'__class__'
+p34
+S"<type 'exceptions.IndexError'>"
+p35
+sS'__unicode__'
+p36
+S'<built-in method __unicode__ of exceptions.IndexError object>'
+p37
+sS'__delattr__'
+p38
+S"<method-wrapper '__delattr__' of exceptions.IndexError object>"
+p39
+sS'__subclasshook__'
+p40
+S'<built-in method __subclasshook__ of type object>'
+p41
+sS'__repr__'
+p42
+S"<method-wrapper '__repr__' of exceptions.IndexError object>"
+p43
+sS'__dict__'
+p44
+S'{}'
+p45
+sS'__sizeof__'
+p46
+S'<built-in method __sizeof__ of exceptions.IndexError object>'
+p47
+sS'__doc__'
+p48
+S"'Sequence index out of range.'"
+p49
+sS'__init__'
+p50
+S"<method-wrapper '__init__' of exceptions.IndexError object>"
+p51
+sS'__new__'
+p52
+S'<built-in method __new__ of type object>'
+p53
+ssS'evalue'
+p54
+S'list index out of range'
+p55
+sS'request'
+p56
+cgluon.html
+XML_unpickle
+p57
+(S's\x13V\x00\x00<div><table><tr><td style="font-weight:bold;vertical-align:top">ajax</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">application</td><td valign="top">:</td><td><div>FOODILY</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">args</td><td valign="top">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">body</td><td valign="top">:</td><td><div>&lt;cStringIO.StringO object at 0x7fcfeb5510a0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">cid</td><td valign="top">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">client</td><td valign="top">:</td><td><div>127.0.0.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">controller</td><td valign="top">:</td><td><div>default</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">cookies</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">session_id_admin</td><td valign="top">:</td><td><div>127.0.0.1-ebc9401a-8f12-4d94-9b1d-5635c96b6fe3<table><tr><td style="font-weight:bold;vertical-align:top">comment</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">domain</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">expires</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">httponly</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">max-age</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">path</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">secure</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">version</td><td valign="top">:</td><td><div></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_id_foodily</td><td valign="top">:</td><td><div>127.0.0.1-0aeb8e79-de6d-438b-985f-ab6d42f521a3<table><tr><td style="font-weight:bold;vertical-align:top">comment</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">domain</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">expires</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">httponly</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">max-age</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">path</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">secure</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">version</td><td valign="top">:</td><td><div></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_id_welcome</td><td valign="top">:</td><td><div>127.0.0.1-ebdea07f-b79f-4307-8be8-b88a8a9d8763<table><tr><td style="font-weight:bold;vertical-align:top">comment</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">domain</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">expires</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">httponly</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">max-age</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">path</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">secure</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">version</td><td valign="top">:</td><td><div></div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">env</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">app_folders</td><td valign="top">:</td><td><div>set([&#x27;/home/navya/itws2/web2pynew/applications/admin/&#x27;, &#x27;/home/navya/itws2/web2pynew/applications/welcome/&#x27;, &#x27;/home/navya/itws2/web2pynew/applications/FOODILY/&#x27;])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">applications_parent</td><td valign="top">:</td><td><div>/home/navya/itws2/web2pynew</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">cmd_args</td><td valign="top">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">cmd_options</td><td valign="top">:</td><td><div>&lt;Values at 0x7fcfebeb6b48: {&#x27;verbose&#x27;: False, &#x27;ip&#x27;: &#x27;127.0.0.1&#x27;, &#x27;with_scheduler&#x27;: False, &#x27;ips&#x27;: [], &#x27;shutdown_timeout&#x27;: 5, &#x27;taskbar&#x27;: False, &#x27;port&#x27;: 8000, &#x27;maxthreads&#x27;: None, &#x27;softcron&#x27;: False, &#x27;server_name&#x27;: &#x27;navya&#x27;, &#x27;bpython&#x27;: False, &#x27;nogui&#x27;: False, &#x27;pid_filename&#x27;: &#x27;httpserver.pid&#x27;, &#x27;extcron&#x27;: False, &#x27;runcron&#x27;: False, &#x27;run_system_tests&#x27;: False, &#x27;test&#x27;: None, &#x27;folder&#x27;: &#x27;/home/navya/itws2/web2pynew&#x27;, &#x27;config&#x27;: &#x27;&#x27;, &#x27;minthreads&#x27;: None, &#x27;winservice&#x27;: &#x27;&#x27;, &#x27;shell&#x27;: None, &#x27;run&#x27;: &#x27;&#x27;, &#x27;log_filename&#x27;: &#x27;httpserver.log&#x27;, &#x27;debuglevel&#x27;: 30, &#x27;args&#x27;: [&#x27;&#x27;], &#x27;socket_timeout&#x27;: 5, &#x27;ssl_ca_certificate&#x27;: None, &#x27;scheduler&#x27;: None, &#x27;profiler_filename&#x27;: None, &#x27;ssl_private_key&#x27;: &#x27;&#x27;, &#x27;scheduler_groups&#x27;: None, &#x27;password&#x27;: &#x27;1234&#x27;, &#x27;request_queue_size&#x27;: 5, &#x27;ssl_certificate&#x27;: &#x27;&#x27;, &#x27;cronjob&#x27;: False, &#x27;numthreads&#x27;: None, &#x27;quiet&#x27;: False, &#x27;interfaces&#x27;: None, &#x27;import_models&#x27;: False, &#x27;timeout&#x27;: 10, &#x27;plain&#x27;: False, &#x27;nobanner&#x27;: False}&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">db_sessions</td><td valign="top">:</td><td><div>set([])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">debugging</td><td valign="top">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">gluon_parent</td><td valign="top">:</td><td><div>/home/navya/itws2/web2pynew</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_accept</td><td valign="top">:</td><td><div>text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_accept_encoding</td><td valign="top">:</td><td><div>gzip, deflate</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_accept_language</td><td valign="top">:</td><td><div>en-US,en;q=0.5</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_cache_control</td><td valign="top">:</td><td><div>max-age=0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_connection</td><td valign="top">:</td><td><div>keep-alive</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_cookie</td><td valign="top">:</td><td><div>__atuvc=2%7C13; session_id_welcome=127.0.0.1-ebdea07f-b79f-4307-8be8-b88a8a9d8763; session_id_admin=127.0.0.1-ebc9401a-8f12-4d94-9b1d-5635c96b6fe3; session_id_foodily=127.0.0.1-0aeb8e79-de6d-438b-985f-ab6d42f521a3</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_host</td><td valign="top">:</td><td><div>127.0.0.1:8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_referer</td><td valign="top">:</td><td><div>http://127.0.0.1:8000/FOODILY/default/viewallposts</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">http_user_agent</td><td valign="top">:</td><td><div>Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">is_jython</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">is_pypy</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">local_hosts</td><td valign="top">:</td><td><div><table><tr><td><div>navya</div></td></tr><tr><td><div>::1</div></td></tr><tr><td><div>127.0.1.1</div></td></tr><tr><td><div>::ffff:127.0.0.1</div></td></tr><tr><td><div>127.0.0.1</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">path_info</td><td valign="top">:</td><td><div>/FOODILY/default/viewallposts</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">query_string</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">remote_addr</td><td valign="top">:</td><td><div>127.0.0.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">remote_port</td><td valign="top">:</td><td><div>41190</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">request_method</td><td valign="top">:</td><td><div>GET</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">request_uri</td><td valign="top">:</td><td><div>/FOODILY/default/viewallposts</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">script_name</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">server_name</td><td valign="top">:</td><td><div>navya</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">server_port</td><td valign="top">:</td><td><div>8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">server_protocol</td><td valign="top">:</td><td><div>HTTP/1.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">server_software</td><td valign="top">:</td><td><div>Rocket 1.2.6</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">web2py_path</td><td valign="top">:</td><td><div>/home/navya/itws2/web2pynew</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">web2py_version</td><td valign="top">:</td><td><div><table><tr><td><div>2</div></td></tr><tr><td><div>4</div></td></tr><tr><td><div>2</div></td></tr><tr><td><div>stable</div></td></tr><tr><td><div>datetime.datetime(2013, 3, 4, 3, 26, 21)</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi_errors</td><td valign="top">:</td><td><div>&lt;open file &#x27;&lt;stderr&gt;&#x27;, mode &#x27;w&#x27; at 0x7fcff02521e0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi_file_wrapper</td><td valign="top">:</td><td><div>&lt;class wsgiref.util.FileWrapper at 0x7fcfeba6e600&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi_input</td><td valign="top">:</td><td><div>&lt;socket._fileobject object at 0x7fcfeb508c50&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi_multiprocess</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi_multithread</td><td valign="top">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi_run_once</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi_url_scheme</td><td valign="top">:</td><td><div>http</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi_version</td><td valign="top">:</td><td><div><table><tr><td><div>1</div></td></tr><tr><td><div>0</div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">extension</td><td valign="top">:</td><td><div>html</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">folder</td><td valign="top">:</td><td><div>/home/navya/itws2/web2pynew/applications/FOODILY/</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">function</td><td valign="top">:</td><td><div>viewallposts</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">get_vars</td><td valign="top">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">global_settings</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">app_folders</td><td valign="top">:</td><td><div>set([&#x27;/home/navya/itws2/web2pynew/applications/admin/&#x27;, &#x27;/home/navya/itws2/web2pynew/applications/welcome/&#x27;, &#x27;/home/navya/itws2/web2pynew/applications/FOODILY/&#x27;])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">applications_parent</td><td valign="top">:</td><td><div>/home/navya/itws2/web2pynew</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">cmd_args</td><td valign="top">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">cmd_options</td><td valign="top">:</td><td><div>&lt;Values at 0x7fcfebeb6b48: {&#x27;verbose&#x27;: False, &#x27;ip&#x27;: &#x27;127.0.0.1&#x27;, &#x27;with_scheduler&#x27;: False, &#x27;ips&#x27;: [], &#x27;shutdown_timeout&#x27;: 5, &#x27;taskbar&#x27;: False, &#x27;port&#x27;: 8000, &#x27;maxthreads&#x27;: None, &#x27;softcron&#x27;: False, &#x27;server_name&#x27;: &#x27;navya&#x27;, &#x27;bpython&#x27;: False, &#x27;nogui&#x27;: False, &#x27;pid_filename&#x27;: &#x27;httpserver.pid&#x27;, &#x27;extcron&#x27;: False, &#x27;runcron&#x27;: False, &#x27;run_system_tests&#x27;: False, &#x27;test&#x27;: None, &#x27;folder&#x27;: &#x27;/home/navya/itws2/web2pynew&#x27;, &#x27;config&#x27;: &#x27;&#x27;, &#x27;minthreads&#x27;: None, &#x27;winservice&#x27;: &#x27;&#x27;, &#x27;shell&#x27;: None, &#x27;run&#x27;: &#x27;&#x27;, &#x27;log_filename&#x27;: &#x27;httpserver.log&#x27;, &#x27;debuglevel&#x27;: 30, &#x27;args&#x27;: [&#x27;&#x27;], &#x27;socket_timeout&#x27;: 5, &#x27;ssl_ca_certificate&#x27;: None, &#x27;scheduler&#x27;: None, &#x27;profiler_filename&#x27;: None, &#x27;ssl_private_key&#x27;: &#x27;&#x27;, &#x27;scheduler_groups&#x27;: None, &#x27;password&#x27;: &#x27;1234&#x27;, &#x27;request_queue_size&#x27;: 5, &#x27;ssl_certificate&#x27;: &#x27;&#x27;, &#x27;cronjob&#x27;: False, &#x27;numthreads&#x27;: None, &#x27;quiet&#x27;: False, &#x27;interfaces&#x27;: None, &#x27;import_models&#x27;: False, &#x27;timeout&#x27;: 10, &#x27;plain&#x27;: False, &#x27;nobanner&#x27;: False}&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">db_sessions</td><td valign="top">:</td><td><div>set([])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">debugging</td><td valign="top">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">gluon_parent</td><td valign="top">:</td><td><div>/home/navya/itws2/web2pynew</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">is_jython</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">is_pypy</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">local_hosts</td><td valign="top">:</td><td><div><table><tr><td><div>navya</div></td></tr><tr><td><div>::1</div></td></tr><tr><td><div>127.0.1.1</div></td></tr><tr><td><div>::ffff:127.0.0.1</div></td></tr><tr><td><div>127.0.0.1</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">web2py_version</td><td valign="top">:</td><td><div><table><tr><td><div>2</div></td></tr><tr><td><div>4</div></td></tr><tr><td><div>2</div></td></tr><tr><td><div>stable</div></td></tr><tr><td><div>datetime.datetime(2013, 3, 4, 3, 26, 21)</div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">is_https</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">is_local</td><td valign="top">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">is_restful</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">now</td><td valign="top">:</td><td><div>datetime.datetime(2016, 3, 29, 18, 58, 15, 329956)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">post_vars</td><td valign="top">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">raw_args</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">raw_extension</td><td valign="top">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">url</td><td valign="top">:</td><td><div>/FOODILY/default/viewallposts</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">utcnow</td><td valign="top">:</td><td><div>datetime.datetime(2016, 3, 29, 13, 28, 15, 329984)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">uuid</td><td valign="top">:</td><td><div>FOODILY/127.0.0.1.2016-03-29.18-58-15.5ffd5925-8a73-4ab6-8323-33438841962f</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">vars</td><td valign="top">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">environ</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">HTTP_ACCEPT</td><td valign="top">:</td><td><div>text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_ACCEPT_ENCODING</td><td valign="top">:</td><td><div>gzip, deflate</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_ACCEPT_LANGUAGE</td><td valign="top">:</td><td><div>en-US,en;q=0.5</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_CACHE_CONTROL</td><td valign="top">:</td><td><div>max-age=0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_CONNECTION</td><td valign="top">:</td><td><div>keep-alive</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_COOKIE</td><td valign="top">:</td><td><div>__atuvc=2%7C13; session_id_welcome=127.0.0.1-ebdea07f-b79f-4307-8be8-b88a8a9d8763; session_id_admin=127.0.0.1-ebc9401a-8f12-4d94-9b1d-5635c96b6fe3; session_id_foodily=127.0.0.1-0aeb8e79-de6d-438b-985f-ab6d42f521a3</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_HOST</td><td valign="top">:</td><td><div>127.0.0.1:8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_REFERER</td><td valign="top">:</td><td><div>http://127.0.0.1:8000/FOODILY/default/viewallposts</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">HTTP_USER_AGENT</td><td valign="top">:</td><td><div>Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">PATH_INFO</td><td valign="top">:</td><td><div>/FOODILY/default/viewallposts</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">QUERY_STRING</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">REMOTE_ADDR</td><td valign="top">:</td><td><div>127.0.0.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">REMOTE_PORT</td><td valign="top">:</td><td><div>41190</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">REQUEST_METHOD</td><td valign="top">:</td><td><div>GET</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">REQUEST_URI</td><td valign="top">:</td><td><div>/FOODILY/default/viewallposts</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">SCRIPT_NAME</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">SERVER_NAME</td><td valign="top">:</td><td><div>navya</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">SERVER_PORT</td><td valign="top">:</td><td><div>8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">SERVER_PROTOCOL</td><td valign="top">:</td><td><div>HTTP/1.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">SERVER_SOFTWARE</td><td valign="top">:</td><td><div>Rocket 1.2.6</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi.errors</td><td valign="top">:</td><td><div>&lt;open file &#x27;&lt;stderr&gt;&#x27;, mode &#x27;w&#x27; at 0x7fcff02521e0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi.file_wrapper</td><td valign="top">:</td><td><div>&lt;class wsgiref.util.FileWrapper at 0x7fcfeba6e600&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi.input</td><td valign="top">:</td><td><div>&lt;cStringIO.StringO object at 0x7fcfeb5510a0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi.multiprocess</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi.multithread</td><td valign="top">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi.run_once</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi.url_scheme</td><td valign="top">:</td><td><div>http</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">wsgi.version</td><td valign="top">:</td><td><div>1</div></td></tr></table></div></td></tr></table></div></td></tr></table></div>'
+tRp58
+sS'frames'
+p59
+(lp60
+(dp61
+S'file'
+p62
+S'/home/navya/itws2/web2pynew/gluon/restricted.py'
+p63
+sS'dump'
+p64
+(dp65
+S'environment'
+p66
+S"{'A': <class 'gluon.html.A'>, 'Auth': <class 'gluon.tools.Auth'>, 'B': <class 'gluon.html.B'>, 'BEAUTIFY': <class 'gluon.html.BEAUTIFY'>, 'BODY': <class 'gluon.html.BODY'>, 'BR': <class 'gluon.html.BR'>, 'BUTTON': <class 'gluon.html.BUTTON'>, 'CAT': <class 'gluon.html.CAT'>, 'CENTER': <class 'gluon.html.CENTER'>, 'CLEANUP': <class 'gluon.validators.CLEANUP'>, ...}"
+p67
+sS'ccode'
+p68
+S'<code object <module> at 0x7fcfb7e409b0, file "/...cations/FOODILY/controllers/default.py", line 13>'
+p69
+ssS'lnum'
+p70
+I212
+sS'lines'
+p71
+(dp72
+I207
+S'    try:'
+p73
+sI208
+S'        if isinstance(code, types.CodeType):'
+p74
+sI209
+S'            ccode = code'
+p75
+sI210
+S'        else:'
+p76
+sI211
+S'            ccode = compile2(code, layer)'
+p77
+sI212
+S'        exec ccode in environment'
+p78
+sI213
+S'    except HTTP:'
+p79
+sI214
+S'        raise'
+p80
+sI215
+S'    except RestrictedError:'
+p81
+sI216
+S'        # do not encapsulate (obfuscate) the original RestrictedError'
+p82
+ssS'call'
+p83
+S"(code='# -*- coding: utf-8 -*-\\n# this file is released ...)\\n\\nresponse._vars=response._caller(viewallposts)\\n', environment={'A': <class 'gluon.html.A'>, 'Auth': <class 'gluon.tools.Auth'>, 'B': <class 'gluon.html.B'>, 'BEAUTIFY': <class 'gluon.html.BEAUTIFY'>, 'BODY': <class 'gluon.html.BODY'>, 'BR': <class 'gluon.html.BR'>, 'BUTTON': <class 'gluon.html.BUTTON'>, 'CAT': <class 'gluon.html.CAT'>, 'CENTER': <class 'gluon.html.CENTER'>, 'CLEANUP': <class 'gluon.validators.CLEANUP'>, ...}, layer='/home/navya/itws2/web2pynew/applications/FOODILY/controllers/default.py')"
+p84
+sS'func'
+p85
+S'restricted'
+p86
+sa(dp87
+g62
+S'/home/navya/itws2/web2pynew/applications/FOODILY/controllers/default.py'
+p88
+sg64
+(dp89
+sg70
+I289
+sg71
+(dp90
+I278
+S'def recipe():'
+p91
+sI279
+S'    #image = db.image(request.args(0,cast=int)'
+p92
+sI280
+S'    temp = db(db.posts.id == request.args(0,cast=int)).select(db.posts.id)'
+p93
+sI281
+S"    temp_id=temp[0]['id']"
+p94
+sI282
+S'    return dict(temp_id=temp_id)'
+p95
+sI283
+S'def vote():'
+p96
+sI284
+S'    posts = db.posts[request.vars.id]'
+p97
+sI285
+S'    new_votes = posts.likes + 1'
+p98
+sI286
+S'    posts.update_record(likes=new_votes)'
+p99
+sI287
+S'    return str(new_votes)'
+p100
+ssg83
+S'()'
+p101
+sg85
+S'<module>'
+p102
+sa(dp103
+g62
+S'/home/navya/itws2/web2pynew/gluon/globals.py'
+p104
+sg64
+(dp105
+S'self'
+p106
+S'undefined'
+p107
+sS'f'
+S'<function viewallposts>'
+p108
+ssg70
+I193
+sg71
+(dp109
+I192
+S'        self._vars = None'
+p110
+sI193
+S'        self._caller = lambda f: f()'
+p111
+sI194
+S'        self._view_environment = None'
+p112
+sI195
+S'        self._custom_commit = None'
+p113
+sI196
+S'        self._custom_rollback = None'
+p114
+sI197
+S''
+sI188
+S'        self.menu = []             # used by the default view layout'
+p115
+sI189
+S'        self.files = []            # used by web2py_ajax.html'
+p116
+sI190
+S'        self.generic_patterns = []  # patterns to allow generic views'
+p117
+sI191
+S"        self.delimiters = ('{{', '}}')"
+p118
+ssg83
+S'(f=<function viewallposts>)'
+p119
+sg85
+S'<lambda>'
+p120
+sa(dp121
+g62
+S'/home/navya/itws2/web2pynew/gluon/tools.py'
+p122
+sg64
+(dp123
+S'action'
+p124
+S'<function viewallposts>'
+p125
+sS'a'
+S'()'
+p126
+sS'b'
+g45
+ssg70
+I2942
+sg71
+(dp127
+I2944
+S'            f.__name__ = action.__name__'
+p128
+sI2945
+S'            f.__dict__.update(action.__dict__)'
+p129
+sI2946
+S'            return f'
+p130
+sI2937
+S'                    flag = condition'
+p131
+sI2938
+S'                if not flag:'
+p132
+sI2939
+S'                    current.session.flash = self.messages.access_denied'
+p133
+sI2940
+S'                    return call_or_redirect('
+p134
+sI2941
+S'                        self.settings.on_failed_authorization)'
+p135
+sI2942
+S'                return action(*a, **b)'
+p136
+sI2943
+S'            f.__doc__ = action.__doc__'
+p137
+ssg83
+S'(*a=(), **b={})'
+p138
+sg85
+S'f'
+sa(dp139
+g62
+S'/home/navya/itws2/web2pynew/applications/FOODILY/controllers/default.py'
+p140
+sg64
+(dp141
+S'l'
+S'<Rows (0)>'
+p142
+sS'li'
+p143
+g107
+ssg70
+I177
+sg71
+(dp144
+I172
+S'    #session.startvar=0'
+p145
+sI173
+S'    #session.endvar=5'
+p146
+sI174
+S'    user = auth.user_id'
+p147
+sI175
+S'    p = db(db.posts.id > 0).select(db.posts.ALL ,orderby=~db.posts.created_on)'
+p148
+sI176
+S'    l=db(db.likes).select(db.likes.ALL)'
+p149
+sI177
+S'    li=l[0]'
+p150
+sI178
+S'    comments=db(db.comment_post.id > 0).select(db.comment_post.ALL)'
+p151
+sI179
+S'    temp = db(db.posts.id > 0).select(db.posts.ALL, orderby=~db.posts.id)'
+p152
+sI180
+S'    session.length = len(temp)'
+p153
+sI181
+S'    abcd = temp[session.startvar : session.endvar]'
+p154
+ssg83
+S'()'
+p155
+sg85
+S'viewallposts'
+p156
+sa(dp157
+g62
+S'/home/navya/itws2/web2pynew/gluon/dal.py'
+p158
+sg64
+(dp159
+S'i'
+S'0'
+sS'self'
+p160
+S'<Rows (0)>'
+p161
+sS'self.records'
+p162
+S'[]'
+p163
+sS'row'
+p164
+g107
+ssg70
+I10034
+sg71
+(dp165
+I10029
+S''
+sI10030
+S'    def __getslice__(self, a, b):'
+p166
+sI10031
+S'        return Rows(self.db,self.records[a:b],self.colnames)'
+p167
+sI10032
+S''
+sI10033
+S'    def __getitem__(self, i):'
+p168
+sI10034
+S'        row = self.records[i]'
+p169
+sI10035
+S'        keys = row.keys()'
+p170
+sI10036
+S"        if self.compact and len(keys) == 1 and keys[0] != '_extra':"
+p171
+sI10037
+S'            return row[row.keys()[0]]'
+p172
+sI10038
+S'        return row'
+p173
+ssg83
+S'(self=<Rows (0)>, i=0)'
+p174
+sg85
+g20
+sasS'pyver'
+p175
+S'Python 2.7.6: /usr/bin/python (prefix: /usr)'
+p176
+sS'session'
+p177
+g57
+(S's\x02\r\x00\x00<div><table><tr><td style="font-weight:bold;vertical-align:top">auth</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">expiration</td><td valign="top">:</td><td><div>3600</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">hmac_key</td><td valign="top">:</td><td><div>ab5051fb-146d-4338-8f40-3500d3eeac1b</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">last_visit</td><td valign="top">:</td><td><div>datetime.datetime(2016, 3, 29, 18, 53, 52, 610178)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">remember</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">user</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">Birthdate</td><td valign="top">:</td><td><div>datetime.date(1997, 4, 28)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">Gender</td><td valign="top">:</td><td><div>Female</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">Hometown</td><td valign="top">:</td><td><div>Indore</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">email</td><td valign="top">:</td><td><div>kharenavya@gmail.com</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">first_name</td><td valign="top">:</td><td><div>Navya</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">id</td><td valign="top">:</td><td><div>1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">last_name</td><td valign="top">:</td><td><div>Khare</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">registration_id</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">registration_key</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">reset_password_key</td><td valign="top">:</td><td><div></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">user_groups</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">1</td><td valign="top">:</td><td><div>user_1</div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">endvar</td><td valign="top">:</td><td><div>5</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">endvar2</td><td valign="top">:</td><td><div>5</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">flash</td><td valign="top">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">last_orderby</td><td valign="top">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">last_query</td><td valign="top">:</td><td><div>db.likes.id&gt;0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">length</td><td valign="top">:</td><td><div>2</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">length2</td><td valign="top">:</td><td><div>2</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">startvar</td><td valign="top">:</td><td><div>0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">startvar2</td><td valign="top">:</td><td><div>0</div></td></tr></table></div>'
+tRp178
+sS'etype'
+p179
+S"<type 'exceptions.IndexError'>"
+p180
+sS'date'
+p181
+S'Tue Mar 29 18:58:15 2016'
+p182
+sS'response'
+p183
+g57
+(S's<\x16\x00\x00<div><table><tr><td style="font-weight:bold;vertical-align:top">body</td><td valign="top">:</td><td><div>&lt;cStringIO.StringO object at 0x7fcfebe0e570&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">cookies</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">session_id_foodily</td><td valign="top">:</td><td><div>127.0.0.1-0aeb8e79-de6d-438b-985f-ab6d42f521a3<table><tr><td style="font-weight:bold;vertical-align:top">comment</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">domain</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">expires</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">httponly</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">max-age</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">path</td><td valign="top">:</td><td><div>/</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">secure</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">version</td><td valign="top">:</td><td><div></div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">delimiters</td><td valign="top">:</td><td><div><table><tr><td><div>{{</div></td></tr><tr><td><div>}}</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">files</td><td valign="top">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">flash</td><td valign="top">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">generic_patterns</td><td valign="top">:</td><td><div><table><tr><td><div>*</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">google_analytics_id</td><td valign="top">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">headers</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">X-Powered-By</td><td valign="top">:</td><td><div>web2py</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">logo</td><td valign="top">:</td><td><div><a><img src="/FOODILY/static/f3.png" /></a></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">menu</td><td valign="top">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">meta</td><td valign="top">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top">author</td><td valign="top">:</td><td><div>Your Name &lt;you@example.com&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">description</td><td valign="top">:</td><td><div>a cool new app</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">generator</td><td valign="top">:</td><td><div>Web2py Web Framework</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">keywords</td><td valign="top">:</td><td><div>web2py, python, framework</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">models_to_run</td><td valign="top">:</td><td><div><table><tr><td><div>^\\w+\\.py$</div></td></tr><tr><td><div>^default/\\w+\\.py$</div></td></tr><tr><td><div>^default/viewallposts/\\w+\\.py$</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">postprocessing</td><td valign="top">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_cookie_expires</td><td valign="top">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_data_name</td><td valign="top">:</td><td><div>session_data_foodily</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_file</td><td valign="top">:</td><td><div>&lt;open file &#x27;/home/navya/itws2/web2pynew/applications/FOODILY/sessions/127.0.0.1-0aeb8e79-de6d-438b-985f-ab6d42f521a3&#x27;, mode &#x27;rb+&#x27; at 0x7fcfe845f8a0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_filename</td><td valign="top">:</td><td><div>/home/navya/itws2/web2pynew/applications/FOODILY/sessions/127.0.0.1-0aeb8e79-de6d-438b-985f-ab6d42f521a3</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_id</td><td valign="top">:</td><td><div>127.0.0.1-0aeb8e79-de6d-438b-985f-ab6d42f521a3</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_id_name</td><td valign="top">:</td><td><div>session_id_foodily</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_locked</td><td valign="top">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_new</td><td valign="top">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">session_storage_type</td><td valign="top">:</td><td><div>file</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">status</td><td valign="top">:</td><td><div>200</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">subtitle</td><td valign="top">:</td><td><div>Share , Store &amp; Search Recipes</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">title</td><td valign="top">:</td><td><div>MyDish.com</div></td></tr><tr><td style="font-weight:bold;vertical-align:top">view</td><td valign="top">:</td><td><div>default/viewallposts.html</div></td></tr></table></div>'
+tRp184
+sS'locals'
+p185
+(dp186
+S'i'
+S'0'
+sS'self'
+p187
+S'<Rows (0)>'
+p188
+sssS'traceback'
+p189
+S'Traceback (most recent call last):\n  File "/home/navya/itws2/web2pynew/gluon/restricted.py", line 212, in restricted\n    exec ccode in environment\n  File "/home/navya/itws2/web2pynew/applications/FOODILY/controllers/default.py", line 289, in <module>\n  File "/home/navya/itws2/web2pynew/gluon/globals.py", line 193, in <lambda>\n    self._caller = lambda f: f()\n  File "/home/navya/itws2/web2pynew/gluon/tools.py", line 2942, in f\n    return action(*a, **b)\n  File "/home/navya/itws2/web2pynew/applications/FOODILY/controllers/default.py", line 177, in viewallposts\n    li=l[0]\n  File "/home/navya/itws2/web2pynew/gluon/dal.py", line 10034, in __getitem__\n    row = self.records[i]\nIndexError: list index out of range\n'
+p190
+s.

@@ -1,0 +1,28 @@
+{{left_sidebar_enabled,right_sidebar_enabled=False,('message' in globals())}}
+{{extend 'layout.html'}}
+{{if 'message' in globals():}}
+{{backimage = URL('static','wood2.png')}}
+<div class="hero-unit" style="background-image: url('{{=backimage}}')" >
+<h3>{{=message}}</h3>
+
+<h4>{{=T('More than 15,000 recipes from around the world!')}}</h4>
+<ol>
+  <li>{{=T('SEARCH - great easy homemade recipes')}}</li>
+  <li>{{=T('STORE - their own recipes and favourites from our collection')}}</li>
+  <li>{{=T('SHARE – connect with friends & family and share recipes')}}</li>
+</ol>
+</div>
+{{elif 'content' in globals():}}
+{{=content}}
+{{else:}}
+{{=BEAUTIFY(response._vars)}}
+{{pass}}
+
+{{block right_sidebar}}
+
+<h6 style="font-size:20px">{{=T("Tell us about your experience")}}</h6>
+<ul>
+    <li><a href="https://www.facebook.com/mydish/info/?tab=page_info">Contact Us</a></li>
+      <li><a href="https://www.facebook.com/mydish/">Feedback</a></li>
+</ul>
+{{end}}
